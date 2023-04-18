@@ -95,6 +95,7 @@ struct BaseCurrencyInfo {
     int256 networkBaseTokenPriceInUsd;
     uint8 networkBaseTokenPriceDecimals;
 }
+
 struct AggregatedReserveData {
     address underlyingAsset;
     string name;
@@ -127,15 +128,21 @@ struct AggregatedReserveData {
     uint256 stableDebtLastUpdateTimestamp;
     uint256 totalScaledVariableDebt;
     uint256 priceInMarketReferenceCurrency;
+    address priceOracle;
     uint256 variableRateSlope1;
     uint256 variableRateSlope2;
     uint256 stableRateSlope1;
     uint256 stableRateSlope2;
+    uint256 baseStableBorrowRate;
+    uint256 baseVariableBorrowRate;
+    uint256 optimalUsageRatio;
     // v3 only
     bool isPaused;
+    bool isSiloedBorrowing;
     uint128 accruedToTreasury;
     uint128 unbacked;
     uint128 isolationModeTotalDebt;
+    bool flashLoanEnabled;
     //
     uint256 debtCeiling;
     uint256 debtCeilingDecimals;
@@ -285,6 +292,13 @@ interface IAaveProtocolDataProvider is IPoolDataProvider {
 
     function getPaused(address asset) external view returns (bool isPaused);
 
+    /*
+     * @notice Returns whether the reserve has FlashLoans enabled or disabled
+     * @param asset The address of the underlying asset of the reserve
+     * @return True if FlashLoans are enabled, false otherwise
+     */
+    function getFlashLoanEnabled(address asset) external view returns (bool);
+
     function getLiquidationProtocolFee(address asset) external view returns (uint256);
 
     function getReserveEModeCategory(address asset) external view returns (uint256);
@@ -422,7 +436,8 @@ interface IRewardsDistributor {
     function getRewardsList() external view returns (address[] memory);
 
     /**
-     * @dev Returns a single rewards balance of an user from contract storage state, not including virtually accrued rewards since last distribution.
+     * @dev Returns a single rewards balance of an user 
+     from contract storage state, not including virtually accrued rewards since last distribution.
      * @param user The address of the user
      * @param reward The address of the reward token
      * @return Unclaimed rewards, from storage
@@ -470,11 +485,4 @@ interface IRewardsController is IRewardsDistributor {
      * @return The claimer address
      */
     function getClaimer(address user) external view returns (address);
-}
-
-interface IUiPoolDataProviderV3 {
-    function getReservesData(IPoolAddressesProvider provider)
-        external
-        view
-        returns (AggregatedReserveData[] memory, BaseCurrencyInfo memory);
 }
